@@ -11,7 +11,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      background: #f5f0eb;
+      background: #FFD1DF;
       font-family: sans-serif;
     }
     canvas {
@@ -56,18 +56,19 @@
     const ICE_COLOR = 'rgba(230, 240, 250, 0.6)';
     const ICE_HIGHLIGHT = 'rgba(255, 255, 255, 0.8)';
     const ICE_SHADOW = 'rgba(180, 195, 210, 0.5)';
-    const STRAW_COLOR = '#1a6b4a';
 
-    // Cup geometry (taiyaki fish shape)
+    // Cup geometry (taiyaki fish shape - more pronounced fish silhouette)
     const CUP_CENTER_X = W / 2;
-    const CUP_TOP_Y = 200;
-    const CUP_BOTTOM_Y = 580;
-    const CUP_WIDTH_TOP = 150;
-    const CUP_WIDTH_MID = 160;
-    const CUP_WIDTH_BOT = 110;
-    const BASE_TOP_Y = 560;
+    const CUP_TOP_Y = 180;
+    const CUP_BOTTOM_Y = 570;
+    const CUP_WIDTH_TOP = 130;       // mouth area (narrower open top)
+    const CUP_WIDTH_HEAD = 155;      // head widens
+    const CUP_WIDTH_BELLY = 170;     // fat belly
+    const CUP_WIDTH_TAIL_MID = 120;  // narrows toward tail
+    const CUP_WIDTH_TAIL = 85;       // narrow tail
+    const BASE_TOP_Y = 555;
     const BASE_BOTTOM_Y = 610;
-    const BASE_WIDTH = 120;
+    const BASE_WIDTH = 105;
 
     // --- Cup path helpers ---
 
@@ -75,22 +76,32 @@
     function cupEdgesAt(y) {
       const t = (y - CUP_TOP_Y) / (CUP_BOTTOM_Y - CUP_TOP_Y);
       let halfW;
-      if (t < 0.15) {
-        // slight rim flare
-        const lt = t / 0.15;
-        halfW = CUP_WIDTH_TOP - 5 + 5 * lt;
-      } else if (t < 0.55) {
-        // body widens (belly of the fish)
-        const lt = (t - 0.15) / 0.4;
-        halfW = CUP_WIDTH_TOP + (CUP_WIDTH_MID - CUP_WIDTH_TOP) * Math.sin(lt * Math.PI / 2);
-      } else if (t < 0.85) {
-        // tapers to tail
-        const lt = (t - 0.55) / 0.3;
-        halfW = CUP_WIDTH_MID - (CUP_WIDTH_MID - CUP_WIDTH_BOT) * lt;
+      if (t < 0.05) {
+        // Rim opening
+        const lt = t / 0.05;
+        halfW = CUP_WIDTH_TOP - 8 + 8 * lt;
+      } else if (t < 0.18) {
+        // Head widens from mouth
+        const lt = (t - 0.05) / 0.13;
+        halfW = CUP_WIDTH_TOP + (CUP_WIDTH_HEAD - CUP_WIDTH_TOP) * Math.sin(lt * Math.PI / 2);
+      } else if (t < 0.45) {
+        // Belly (widest part) - nice round fish belly
+        const lt = (t - 0.18) / 0.27;
+        halfW = CUP_WIDTH_HEAD + (CUP_WIDTH_BELLY - CUP_WIDTH_HEAD) * Math.sin(lt * Math.PI);
+      } else if (t < 0.7) {
+        // Taper from belly to tail section
+        const lt = (t - 0.45) / 0.25;
+        const ease = lt * lt; // accelerate the taper
+        halfW = CUP_WIDTH_BELLY - (CUP_WIDTH_BELLY - CUP_WIDTH_TAIL_MID) * ease;
+      } else if (t < 0.88) {
+        // Tail narrows more
+        const lt = (t - 0.7) / 0.18;
+        halfW = CUP_WIDTH_TAIL_MID - (CUP_WIDTH_TAIL_MID - CUP_WIDTH_TAIL) * lt;
       } else {
-        // tail connects to base
-        const lt = (t - 0.85) / 0.15;
-        halfW = CUP_WIDTH_BOT - (CUP_WIDTH_BOT - BASE_WIDTH) * lt;
+        // Tail flares slightly into base (tail fin shape)
+        const lt = (t - 0.88) / 0.12;
+        const flare = Math.sin(lt * Math.PI) * 15; // slight outward flare
+        halfW = CUP_WIDTH_TAIL + flare - (CUP_WIDTH_TAIL - BASE_WIDTH) * lt;
       }
       return { left: CUP_CENTER_X - halfW, right: CUP_CENTER_X + halfW };
     }
@@ -105,7 +116,7 @@
       }
       // Bottom curve
       const botE = cupEdgesAt(CUP_BOTTOM_Y);
-      ctx.quadraticCurveTo(CUP_CENTER_X, CUP_BOTTOM_Y + 15, botE.right, CUP_BOTTOM_Y);
+      ctx.quadraticCurveTo(CUP_CENTER_X, CUP_BOTTOM_Y + 12, botE.right, CUP_BOTTOM_Y);
       // Go up right side
       for (let y = CUP_BOTTOM_Y; y >= CUP_TOP_Y; y -= 2) {
         const e = cupEdgesAt(y);
@@ -115,18 +126,27 @@
       ctx.closePath();
     }
 
-    // --- Draw the ridged base ---
+    // --- Draw the tail fin base ---
     function drawBase() {
-      const ridgeCount = 18;
-      const baseH = BASE_BOTTOM_Y - BASE_TOP_Y;
+      const ridgeCount = 14;
 
       ctx.save();
-      // Base shape
+
+      // Tail fin shape - fan-like spread at bottom
       ctx.beginPath();
-      ctx.moveTo(CUP_CENTER_X - BASE_WIDTH, BASE_TOP_Y);
-      ctx.lineTo(CUP_CENTER_X - BASE_WIDTH - 8, BASE_BOTTOM_Y);
-      ctx.quadraticCurveTo(CUP_CENTER_X, BASE_BOTTOM_Y + 10, CUP_CENTER_X + BASE_WIDTH + 8, BASE_BOTTOM_Y);
-      ctx.lineTo(CUP_CENTER_X + BASE_WIDTH, BASE_TOP_Y);
+      ctx.moveTo(CUP_CENTER_X - BASE_WIDTH + 10, BASE_TOP_Y);
+      // Left side fans out
+      ctx.quadraticCurveTo(
+        CUP_CENTER_X - BASE_WIDTH - 20, BASE_TOP_Y + 20,
+        CUP_CENTER_X - BASE_WIDTH - 15, BASE_BOTTOM_Y
+      );
+      // Bottom curve
+      ctx.quadraticCurveTo(CUP_CENTER_X, BASE_BOTTOM_Y + 12, CUP_CENTER_X + BASE_WIDTH + 15, BASE_BOTTOM_Y);
+      // Right side fans out
+      ctx.quadraticCurveTo(
+        CUP_CENTER_X + BASE_WIDTH + 20, BASE_TOP_Y + 20,
+        CUP_CENTER_X + BASE_WIDTH - 10, BASE_TOP_Y
+      );
       ctx.closePath();
 
       ctx.fillStyle = CUP_GLASS_COLOR;
@@ -135,13 +155,15 @@
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Vertical ridges
+      // Fan ridges radiating from center top
       for (let i = 0; i < ridgeCount; i++) {
         const t = (i + 0.5) / ridgeCount;
-        const x = CUP_CENTER_X - BASE_WIDTH - 8 + (2 * BASE_WIDTH + 16) * t;
+        const angle = -0.6 + t * 1.2; // spread angle
+        const topX = CUP_CENTER_X + Math.sin(angle) * 15;
+        const botX = CUP_CENTER_X - BASE_WIDTH - 10 + (2 * BASE_WIDTH + 20) * t;
         ctx.beginPath();
-        ctx.moveTo(x + 4, BASE_TOP_Y + 2);
-        ctx.lineTo(x, BASE_BOTTOM_Y - 2);
+        ctx.moveTo(topX, BASE_TOP_Y + 3);
+        ctx.lineTo(botX, BASE_BOTTOM_Y - 2);
         ctx.strokeStyle = SCALE_COLOR;
         ctx.lineWidth = 1;
         ctx.stroke();
@@ -156,23 +178,27 @@
       drawCupOutlinePath();
       ctx.clip();
 
-      const scaleRows = 8;
-      const scaleCols = 7;
-      const bodyTop = CUP_TOP_Y + 100;
-      const bodyBot = CUP_BOTTOM_Y - 40;
-      const rowH = (bodyBot - bodyTop) / scaleRows;
+      const bodyTop = CUP_TOP_Y + 90;   // scales start below head
+      const bodyBot = CUP_BOTTOM_Y - 30;
+      const rowH = 38;
+      const scaleRows = Math.floor((bodyBot - bodyTop) / rowH);
 
       for (let r = 0; r < scaleRows; r++) {
         const y = bodyTop + r * rowH;
-        for (let c = 0; c < scaleCols; c++) {
-          const offset = (r % 2) ? rowH * 0.4 : 0;
-          const colW = 50;
-          const x = CUP_CENTER_X - (scaleCols * colW) / 2 + c * colW + offset;
+        // Get width at this y to know how many scales fit
+        const edges = cupEdgesAt(y);
+        const rowWidth = edges.right - edges.left;
+        const scaleW = 42;
+        const cols = Math.ceil(rowWidth / scaleW) + 1;
+        const offset = (r % 2) ? scaleW * 0.5 : 0;
+
+        for (let c = 0; c < cols; c++) {
+          const x = edges.left - scaleW + c * scaleW + offset;
 
           ctx.beginPath();
-          ctx.arc(x, y, rowH * 0.55, 0, Math.PI, false);
+          ctx.arc(x, y, rowH * 0.52, 0, Math.PI, false);
           ctx.strokeStyle = SCALE_COLOR;
-          ctx.lineWidth = 1.2;
+          ctx.lineWidth = 1.5;
           ctx.stroke();
         }
       }
@@ -181,16 +207,16 @@
 
     // --- Fish eye ---
     function drawEye() {
-      const eyeX = CUP_CENTER_X + 30;
-      const eyeY = CUP_TOP_Y + 70;
+      const eyeX = CUP_CENTER_X + 25;
+      const eyeY = CUP_TOP_Y + 55;
 
       // Spiral eye (like in the photo)
       ctx.save();
       ctx.strokeStyle = CUP_OUTLINE;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      const spiralTurns = 2.5;
-      const maxR = 14;
+      const spiralTurns = 2.8;
+      const maxR = 18;
       for (let a = 0; a < spiralTurns * Math.PI * 2; a += 0.1) {
         const r = (a / (spiralTurns * Math.PI * 2)) * maxR;
         const px = eyeX + Math.cos(a) * r;
@@ -204,23 +230,23 @@
 
     // --- Fish mouth / smile ---
     function drawMouth() {
-      const mouthX = CUP_CENTER_X + 60;
-      const mouthY = CUP_TOP_Y + 55;
+      const mouthX = CUP_CENTER_X + 65;
+      const mouthY = CUP_TOP_Y + 40;
 
       ctx.save();
+      // Cute open mouth
       ctx.strokeStyle = CUP_OUTLINE;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(mouthX, mouthY, 12, 0.3, Math.PI - 0.3, false);
+      ctx.arc(mouthX, mouthY, 10, 0.2, Math.PI - 0.2, false);
       ctx.stroke();
 
-      // Small lines near mouth (whisker/gill marks like in the photo)
+      // Gill marks (3 small curved lines)
       for (let i = 0; i < 3; i++) {
-        const lx = CUP_CENTER_X + 45 + i * 8;
-        const ly = CUP_TOP_Y + 75 + i * 3;
+        const lx = CUP_CENTER_X + 42 + i * 7;
+        const ly = CUP_TOP_Y + 62 + i * 4;
         ctx.beginPath();
-        ctx.moveTo(lx, ly);
-        ctx.lineTo(lx + 10, ly + 2);
+        ctx.arc(lx + 5, ly, 6, Math.PI * 0.3, Math.PI * 0.8);
         ctx.strokeStyle = CUP_OUTLINE;
         ctx.lineWidth = 1.5;
         ctx.stroke();
@@ -228,20 +254,59 @@
       ctx.restore();
     }
 
-    // --- Tail fin detail ---
-    function drawTailFin() {
-      const tailY = CUP_BOTTOM_Y - 60;
+    // --- Pectoral fin (side fin detail) ---
+    function drawPectoralFin() {
       ctx.save();
+      drawCupOutlinePath();
+      ctx.clip();
+
+      const finX = CUP_CENTER_X - 70;
+      const finY = CUP_TOP_Y + 120;
+
       ctx.strokeStyle = SCALE_COLOR;
       ctx.lineWidth = 1.5;
 
-      // Fan lines radiating from center bottom
-      for (let i = -3; i <= 3; i++) {
+      // Small fin shape on the side
+      ctx.beginPath();
+      ctx.moveTo(finX + 30, finY);
+      ctx.quadraticCurveTo(finX, finY + 15, finX + 5, finY + 35);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(finX + 30, finY + 5);
+      ctx.quadraticCurveTo(finX + 5, finY + 18, finX + 12, finY + 35);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // --- Tail fin detail on cup body ---
+    function drawTailFin() {
+      ctx.save();
+      drawCupOutlinePath();
+      ctx.clip();
+
+      const tailY = CUP_BOTTOM_Y - 55;
+      ctx.strokeStyle = SCALE_COLOR;
+      ctx.lineWidth = 1.5;
+
+      // Fan lines radiating from center toward tail
+      for (let i = -4; i <= 4; i++) {
         ctx.beginPath();
-        ctx.moveTo(CUP_CENTER_X + i * 15, tailY);
-        ctx.lineTo(CUP_CENTER_X + i * 20, CUP_BOTTOM_Y - 5);
+        ctx.moveTo(CUP_CENTER_X + i * 10, tailY);
+        ctx.lineTo(CUP_CENTER_X + i * 18, CUP_BOTTOM_Y - 5);
         ctx.stroke();
       }
+
+      // Horizontal line separating tail from body
+      const tailEdges = cupEdgesAt(tailY);
+      ctx.beginPath();
+      ctx.moveTo(tailEdges.left + 5, tailY);
+      ctx.lineTo(tailEdges.right - 5, tailY);
+      ctx.strokeStyle = SCALE_COLOR;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
       ctx.restore();
     }
 
@@ -365,68 +430,80 @@
       ctx.restore();
     }
 
-    // --- Milk carton ---
-    function drawMilkCarton(x, y) {
+    // --- Milk carton (half visible from right edge) ---
+    function drawMilkCarton() {
       ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(-0.35); // tilted to pour
 
-      const cw = 60;  // carton width
-      const ch = 90;  // carton height
+      const cartonRight = W + 30; // partially off-screen right
+      const cartonTop = 30;
+      const cw = 100;
+      const ch = 150;
+      const tilt = -0.25;
+
+      ctx.translate(cartonRight - cw / 2, cartonTop + ch / 2);
+      ctx.rotate(tilt);
 
       // Carton body
       ctx.fillStyle = '#f0f0f0';
       ctx.strokeStyle = '#bbb';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 4);
+      ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 5);
       ctx.fill();
       ctx.stroke();
 
-      // Blue top band
+      // Blue band at top
       ctx.fillStyle = '#4a90d9';
       ctx.beginPath();
-      ctx.roundRect(-cw / 2, -ch / 2, cw, 28, [4, 4, 0, 0]);
+      ctx.roundRect(-cw / 2, -ch / 2, cw, 40, [5, 5, 0, 0]);
       ctx.fill();
 
       // "MILK" text
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 13px sans-serif';
+      ctx.font = 'bold 18px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('MILK', 0, -ch / 2 + 19);
+      ctx.fillText('MILK', 0, -ch / 2 + 28);
 
-      // Roof / triangular top
+      // Triangular gable top
       ctx.fillStyle = '#4a90d9';
       ctx.beginPath();
       ctx.moveTo(-cw / 2, -ch / 2);
-      ctx.lineTo(0, -ch / 2 - 18);
+      ctx.lineTo(0, -ch / 2 - 25);
       ctx.lineTo(cw / 2, -ch / 2);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#3a7bc8';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Spout opening
+      // Spout (open, pouring)
       ctx.fillStyle = '#ddd';
       ctx.beginPath();
-      ctx.moveTo(-cw / 2 - 2, -ch / 2 + 2);
-      ctx.lineTo(-cw / 2 - 10, -ch / 2 + 8);
-      ctx.lineTo(-cw / 2 + 6, -ch / 2 + 6);
+      ctx.moveTo(-cw / 2 - 3, -ch / 2 + 3);
+      ctx.lineTo(-cw / 2 - 15, -ch / 2 + 12);
+      ctx.lineTo(-cw / 2 + 8, -ch / 2 + 10);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#bbb';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Cow spots decoration
-      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      // Cow spots
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
       ctx.beginPath();
-      ctx.ellipse(-8, 10, 12, 8, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(-12, 15, 18, 12, 0.3, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(12, 20, 9, 7, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(15, 35, 14, 10, -0.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(-5, 30, 8, 6, 0.5, 0, Math.PI * 2);
+      ctx.ellipse(-8, 50, 12, 9, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Blue stripe at bottom
+      ctx.fillStyle = '#4a90d9';
+      ctx.beginPath();
+      ctx.roundRect(-cw / 2, ch / 2 - 20, cw, 20, [0, 0, 5, 5]);
       ctx.fill();
 
       ctx.restore();
@@ -436,45 +513,28 @@
     function drawMilkStream() {
       if (state !== STATE.POURING && state !== STATE.SETTLING) return;
 
-      const cartonX = W - 75;
-      const cartonY = 60;
-      // Spout position (accounting for carton rotation)
-      const startX = cartonX - 42;
-      const startY = cartonY - 18;
-      const endX = CUP_CENTER_X + 30;
-      const endY = CUP_TOP_Y + 10;
+      // Stream starts from carton spout area (right side)
+      const startX = W - 55;
+      const startY = 75;
+      const endX = CUP_CENTER_X + 20;
+      const endY = CUP_TOP_Y + 8;
 
       ctx.save();
 
       const streamLen = pourProgress;
 
       if (streamLen > 0.01) {
-        // Main milk stream
+        // Thick main milk stream
         ctx.strokeStyle = MILK_COLOR;
-        ctx.lineWidth = 7;
+        ctx.lineWidth = 14;
         ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
         ctx.beginPath();
-        for (let t = 0; t <= streamLen; t += 0.015) {
-          const x = startX + (endX - startX) * t;
-          const baseY = startY + (endY - startY) * t * t; // parabolic arc
-          const wobble = Math.sin(t * 12 + frame * 0.1) * 2.5 * t;
-          const px = x + wobble * 0.3;
-          const py = baseY;
-
-          if (t === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        }
-        ctx.stroke();
-
-        // Thinner white core
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        for (let t = 0; t <= streamLen; t += 0.015) {
+        for (let t = 0; t <= streamLen; t += 0.01) {
           const x = startX + (endX - startX) * t;
           const baseY = startY + (endY - startY) * t * t;
-          const wobble = Math.sin(t * 12 + frame * 0.1) * 2.5 * t;
+          const wobble = Math.sin(t * 10 + frame * 0.08) * 3 * t;
           const px = x + wobble * 0.3;
           const py = baseY;
 
@@ -483,13 +543,42 @@
         }
         ctx.stroke();
 
-        // Splash particles at pour point when stream reaches cup
+        // White highlight core
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        for (let t = 0; t <= streamLen; t += 0.01) {
+          const x = startX + (endX - startX) * t;
+          const baseY = startY + (endY - startY) * t * t;
+          const wobble = Math.sin(t * 10 + frame * 0.08) * 3 * t;
+          const px = x + wobble * 0.3;
+          const py = baseY;
+
+          if (t === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // Edge shadow for depth
+        ctx.strokeStyle = 'rgba(200, 190, 175, 0.4)';
+        ctx.lineWidth = 16;
+        ctx.beginPath();
+        for (let t = 0; t <= Math.min(streamLen, 0.3); t += 0.01) {
+          const x = startX + (endX - startX) * t;
+          const baseY = startY + (endY - startY) * t * t;
+          if (t === 0) ctx.moveTo(x, baseY);
+          else ctx.lineTo(x, baseY);
+        }
+        ctx.stroke();
+
+        // Splash at pour point
         if (pourProgress > 0.9) {
-          for (let i = 0; i < 5; i++) {
-            const splashX = endX + Math.sin(frame * 0.2 + i * 1.5) * 14;
-            const splashY = endY + Math.abs(Math.cos(frame * 0.15 + i * 2)) * 12;
+          for (let i = 0; i < 6; i++) {
+            const splashX = endX + Math.sin(frame * 0.2 + i * 1.3) * 16;
+            const splashY = endY + Math.abs(Math.cos(frame * 0.15 + i * 1.8)) * 14;
+            const r = 2 + Math.random() * 2;
             ctx.beginPath();
-            ctx.arc(splashX, splashY, 2 + Math.random() * 1.5, 0, Math.PI * 2);
+            ctx.arc(splashX, splashY, r, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(245, 239, 232, 0.7)';
             ctx.fill();
           }
@@ -498,52 +587,8 @@
 
       ctx.restore();
 
-      // Draw milk carton on top
-      drawMilkCarton(cartonX, cartonY);
-    }
-
-    // --- Green straw ---
-    function drawStraw() {
-      ctx.save();
-
-      const strawBottomX = CUP_CENTER_X + 25;
-      const strawBottomY = CUP_BOTTOM_Y - 60;
-      const strawTopX = CUP_CENTER_X + 65;
-      const strawTopY = CUP_TOP_Y - 60;
-
-      // Straw shadow
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-      ctx.lineWidth = 10;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(strawBottomX + 2, strawBottomY + 2);
-      ctx.lineTo(strawTopX + 2, strawTopY + 2);
-      ctx.stroke();
-
-      // Main straw body
-      ctx.strokeStyle = STRAW_COLOR;
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(strawBottomX, strawBottomY);
-      ctx.lineTo(strawTopX, strawTopY);
-      ctx.stroke();
-
-      // Straw highlight
-      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(strawBottomX - 2, strawBottomY);
-      ctx.lineTo(strawTopX - 2, strawTopY);
-      ctx.stroke();
-
-      // Straw opening at top
-      ctx.beginPath();
-      ctx.ellipse(strawTopX, strawTopY, 4, 2, 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = '#0d4a30';
-      ctx.fill();
-
-      ctx.restore();
+      // Draw milk carton (partially off right edge)
+      drawMilkCarton();
     }
 
     // --- Cup glass body (transparent overlay) ---
@@ -598,13 +643,15 @@
       ctx.restore();
     }
 
-    // --- Shadow under cup ---
+    // --- Shadow under cup (on steel table) ---
     function drawShadow() {
       ctx.save();
+      const shadowY = TABLE_Y + 4;
       ctx.beginPath();
-      ctx.ellipse(CUP_CENTER_X, BASE_BOTTOM_Y + 8, BASE_WIDTH + 15, 10, 0, 0, Math.PI * 2);
-      const grad = ctx.createRadialGradient(CUP_CENTER_X, BASE_BOTTOM_Y + 8, 0, CUP_CENTER_X, BASE_BOTTOM_Y + 8, BASE_WIDTH + 15);
-      grad.addColorStop(0, 'rgba(0,0,0,0.2)');
+      ctx.ellipse(CUP_CENTER_X, shadowY, BASE_WIDTH + 20, 12, 0, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(CUP_CENTER_X, shadowY, 0, CUP_CENTER_X, shadowY, BASE_WIDTH + 20);
+      grad.addColorStop(0, 'rgba(0,0,0,0.25)');
+      grad.addColorStop(0.6, 'rgba(0,0,0,0.1)');
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.fill();
@@ -612,21 +659,64 @@
     }
 
     // --- Background ---
-    function drawBackground() {
-      // Soft gradient background
-      const grad = ctx.createLinearGradient(0, 0, 0, H);
-      grad.addColorStop(0, '#f5f0eb');
-      grad.addColorStop(1, '#e8e0d5');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
+    const TABLE_Y = BASE_BOTTOM_Y + 18;
 
-      // Subtle surface line
+    function drawBackground() {
+      // Light pink background (wall)
+      const wallGrad = ctx.createLinearGradient(0, 0, 0, TABLE_Y);
+      wallGrad.addColorStop(0, '#FFD1DF');
+      wallGrad.addColorStop(1, '#ffbdd0');
+      ctx.fillStyle = wallGrad;
+      ctx.fillRect(0, 0, W, TABLE_Y);
+
+      // Steel table surface
+      const tableGrad = ctx.createLinearGradient(0, TABLE_Y, 0, H);
+      tableGrad.addColorStop(0, '#c8c8cc');   // lighter steel edge
+      tableGrad.addColorStop(0.02, '#b0b0b6'); // steel top
+      tableGrad.addColorStop(0.15, '#a8a8b0');
+      tableGrad.addColorStop(0.5, '#9a9aa2');
+      tableGrad.addColorStop(1, '#8a8a92');    // darker at bottom
+      ctx.fillStyle = tableGrad;
+      ctx.fillRect(0, TABLE_Y, W, H - TABLE_Y);
+
+      // Steel edge highlight
       ctx.beginPath();
-      ctx.moveTo(0, BASE_BOTTOM_Y + 20);
-      ctx.lineTo(W, BASE_BOTTOM_Y + 20);
-      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+      ctx.moveTo(0, TABLE_Y);
+      ctx.lineTo(W, TABLE_Y);
+      ctx.strokeStyle = '#d8d8dc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Subtle edge shadow below highlight
+      ctx.beginPath();
+      ctx.moveTo(0, TABLE_Y + 2);
+      ctx.lineTo(W, TABLE_Y + 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
       ctx.lineWidth = 1;
       ctx.stroke();
+
+      // Brushed steel horizontal grain lines
+      ctx.save();
+      ctx.globalAlpha = 0.04;
+      for (let y = TABLE_Y + 5; y < H; y += 3) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.strokeStyle = y % 6 === 0 ? '#fff' : '#000';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+      // Subtle reflection on steel table
+      ctx.save();
+      const reflGrad = ctx.createLinearGradient(0, TABLE_Y, 0, TABLE_Y + 60);
+      reflGrad.addColorStop(0, 'rgba(255, 209, 223, 0.12)');
+      reflGrad.addColorStop(1, 'rgba(255, 209, 223, 0)');
+      ctx.fillStyle = reflGrad;
+      ctx.fillRect(0, TABLE_Y, W, 60);
+      ctx.restore();
     }
 
     // --- State machine ---
@@ -704,6 +794,7 @@
       // Fish details ON TOP of liquid so they're visible through the glass
       drawScales();
       drawTailFin();
+      drawPectoralFin();
       drawEye();
       drawMouth();
 
@@ -718,9 +809,6 @@
 
       // Rim
       drawRim();
-
-      // Straw
-      drawStraw();
 
       // Milk stream (on top of everything)
       drawMilkStream();
