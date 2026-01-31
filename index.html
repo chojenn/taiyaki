@@ -24,11 +24,11 @@
   </style>
 </head>
 <body>
-  <canvas id="taiyaki" width="125" height="175"></canvas>
+  <canvas id="taiyaki" width="250" height="350"></canvas>
   <script>
     const canvas = document.getElementById('taiyaki');
     const ctx = canvas.getContext('2d');
-    const PIXEL_SCALE = 0.25;
+    const PIXEL_SCALE = 0.5;
     ctx.scale(PIXEL_SCALE, PIXEL_SCALE);
     // Use virtual dimensions matching original design
     const W = canvas.width / PIXEL_SCALE;
