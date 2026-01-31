@@ -61,7 +61,7 @@
     const CUP_CENTER_X = W / 2;
     const CUP_TOP_Y = 200;
     const CUP_BOTTOM_Y = 580;
-    const CUP_WIDTH_TOP = 150;
+    const CUP_WIDTH_TOP = 120;
     const CUP_WIDTH_MID = 160;
     const CUP_WIDTH_BOT = 110;
     const BASE_TOP_Y = 560;
@@ -246,24 +246,24 @@
     // --- Ice cubes (big, filling bottom half of cup, spread to edges) ---
     const iceCubes = [
       // Bottom row (near base, y ~540-555) - cup ~110 half-width here
-      { x: CUP_CENTER_X - 75, y: 548, w: 58, h: 48, rot: 0.2, bobOffset: 0 },
-      { x: CUP_CENTER_X, y: 555, w: 55, h: 46, rot: 0.08, bobOffset: 2.5 },
-      { x: CUP_CENTER_X + 70, y: 550, w: 54, h: 46, rot: -0.15, bobOffset: 1.2 },
-      // Lower-middle row (y ~495-520) - cup ~130 half-width
-      { x: CUP_CENTER_X - 95, y: 505, w: 60, h: 52, rot: -0.18, bobOffset: 0.8 },
-      { x: CUP_CENTER_X - 20, y: 512, w: 58, h: 50, rot: 0.1, bobOffset: 4.0 },
-      { x: CUP_CENTER_X + 45, y: 498, w: 62, h: 52, rot: -0.05, bobOffset: 3.0 },
-      { x: CUP_CENTER_X + 100, y: 508, w: 52, h: 48, rot: 0.18, bobOffset: 1.8 },
-      // Upper-middle row (y ~455-475) - cup ~150 half-width
-      { x: CUP_CENTER_X - 110, y: 465, w: 55, h: 48, rot: 0.12, bobOffset: 0.5 },
-      { x: CUP_CENTER_X - 35, y: 460, w: 60, h: 50, rot: -0.08, bobOffset: 2.8 },
-      { x: CUP_CENTER_X + 35, y: 470, w: 58, h: 50, rot: 0.07, bobOffset: 1.5 },
-      { x: CUP_CENTER_X + 105, y: 468, w: 52, h: 46, rot: -0.15, bobOffset: 2.0 },
-      // Top row (y ~415-430) - cup ~155 half-width
-      { x: CUP_CENTER_X - 105, y: 422, w: 55, h: 48, rot: -0.1, bobOffset: 1.0 },
-      { x: CUP_CENTER_X - 25, y: 418, w: 58, h: 50, rot: 0.14, bobOffset: 3.3 },
-      { x: CUP_CENTER_X + 50, y: 425, w: 56, h: 48, rot: -0.06, bobOffset: 3.8 },
-      { x: CUP_CENTER_X + 115, y: 420, w: 50, h: 44, rot: 0.1, bobOffset: 2.2 },
+      { x: CUP_CENTER_X - 65, y: 548, w: 55, h: 46, rot: 0.2, bobOffset: 0 },
+      { x: CUP_CENTER_X + 5, y: 555, w: 52, h: 44, rot: 0.08, bobOffset: 2.5 },
+      { x: CUP_CENTER_X + 60, y: 550, w: 50, h: 44, rot: -0.15, bobOffset: 1.2 },
+      // Lower-middle row (y ~495-520) - cup ~125 half-width
+      { x: CUP_CENTER_X - 80, y: 505, w: 56, h: 50, rot: -0.18, bobOffset: 0.8 },
+      { x: CUP_CENTER_X - 15, y: 512, w: 55, h: 48, rot: 0.1, bobOffset: 4.0 },
+      { x: CUP_CENTER_X + 50, y: 498, w: 58, h: 50, rot: -0.05, bobOffset: 3.0 },
+      { x: CUP_CENTER_X + 85, y: 508, w: 48, h: 44, rot: 0.18, bobOffset: 1.8 },
+      // Upper-middle row (y ~455-475) - cup ~140 half-width
+      { x: CUP_CENTER_X - 95, y: 465, w: 52, h: 46, rot: 0.12, bobOffset: 0.5 },
+      { x: CUP_CENTER_X - 30, y: 460, w: 56, h: 48, rot: -0.08, bobOffset: 2.8 },
+      { x: CUP_CENTER_X + 35, y: 470, w: 55, h: 48, rot: 0.07, bobOffset: 1.5 },
+      { x: CUP_CENTER_X + 95, y: 468, w: 48, h: 44, rot: -0.15, bobOffset: 2.0 },
+      // Top row (y ~415-430) - cup ~150 half-width
+      { x: CUP_CENTER_X - 100, y: 422, w: 52, h: 46, rot: -0.1, bobOffset: 1.0 },
+      { x: CUP_CENTER_X - 25, y: 418, w: 55, h: 48, rot: 0.14, bobOffset: 3.3 },
+      { x: CUP_CENTER_X + 45, y: 425, w: 53, h: 46, rot: -0.06, bobOffset: 3.8 },
+      { x: CUP_CENTER_X + 100, y: 420, w: 48, h: 42, rot: 0.1, bobOffset: 2.2 },
     ];
 
     // Track whether pouring has started (for ice animation)
@@ -377,15 +377,15 @@
       ctx.restore();
     }
 
-    // --- Milk carton (half visible from right edge, larger, red) ---
+    // --- Milk carton (half visible from right edge, large, red, tilted back) ---
     function drawMilkCarton() {
       ctx.save();
 
-      const cartonRight = W + 40; // partially off-screen right
-      const cartonTop = 10;
-      const cw = 140;
-      const ch = 210;
-      const tilt = -0.25;
+      const cartonRight = W + 55; // partially off-screen right
+      const cartonTop = -20;
+      const cw = 210;    // 50% larger
+      const ch = 315;    // 50% larger
+      const tilt = -0.45; // tilted back more for pouring
 
       ctx.translate(cartonRight - cw / 2, cartonTop + ch / 2);
       ctx.rotate(tilt);
@@ -393,64 +393,64 @@
       // Carton body
       ctx.fillStyle = '#f0f0f0';
       ctx.strokeStyle = '#bbb';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 6);
+      ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 8);
       ctx.fill();
       ctx.stroke();
 
       // Red band at top
       ctx.fillStyle = '#d94a4a';
       ctx.beginPath();
-      ctx.roundRect(-cw / 2, -ch / 2, cw, 55, [6, 6, 0, 0]);
+      ctx.roundRect(-cw / 2, -ch / 2, cw, 82, [8, 8, 0, 0]);
       ctx.fill();
 
       // "MILK" text
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 24px sans-serif';
+      ctx.font = 'bold 36px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('MILK', 0, -ch / 2 + 38);
+      ctx.fillText('MILK', 0, -ch / 2 + 57);
 
       // Triangular gable top
       ctx.fillStyle = '#d94a4a';
       ctx.beginPath();
       ctx.moveTo(-cw / 2, -ch / 2);
-      ctx.lineTo(0, -ch / 2 - 35);
+      ctx.lineTo(0, -ch / 2 - 52);
       ctx.lineTo(cw / 2, -ch / 2);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#c83a3a';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.stroke();
 
       // Spout (open, pouring)
       ctx.fillStyle = '#ddd';
       ctx.beginPath();
-      ctx.moveTo(-cw / 2 - 4, -ch / 2 + 4);
-      ctx.lineTo(-cw / 2 - 20, -ch / 2 + 16);
-      ctx.lineTo(-cw / 2 + 10, -ch / 2 + 14);
+      ctx.moveTo(-cw / 2 - 6, -ch / 2 + 6);
+      ctx.lineTo(-cw / 2 - 30, -ch / 2 + 24);
+      ctx.lineTo(-cw / 2 + 15, -ch / 2 + 20);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#bbb';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.stroke();
 
       // Cow spots
       ctx.fillStyle = 'rgba(0,0,0,0.07)';
       ctx.beginPath();
-      ctx.ellipse(-16, 20, 24, 16, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(-24, 30, 36, 24, 0.3, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(20, 48, 18, 14, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(30, 72, 27, 21, -0.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(-10, 70, 16, 12, 0.5, 0, Math.PI * 2);
+      ctx.ellipse(-15, 105, 24, 18, 0.5, 0, Math.PI * 2);
       ctx.fill();
 
       // Red stripe at bottom
       ctx.fillStyle = '#d94a4a';
       ctx.beginPath();
-      ctx.roundRect(-cw / 2, ch / 2 - 28, cw, 28, [0, 0, 6, 6]);
+      ctx.roundRect(-cw / 2, ch / 2 - 42, cw, 42, [0, 0, 8, 8]);
       ctx.fill();
 
       ctx.restore();
@@ -461,9 +461,9 @@
       if (state !== STATE.POURING && state !== STATE.SETTLING) return;
 
       // Stream starts from carton spout area (right side, adjusted for larger carton)
-      const startX = W - 65;
-      const startY = 60;
-      const endX = CUP_CENTER_X + 20;
+      const startX = W - 75;
+      const startY = 45;
+      const endX = CUP_CENTER_X + 15;
       // Target the liquid surface so stream hits the latte as it fills
       const espressoBaseLevel = CUP_BOTTOM_Y - 80;
       const fullLevel = CUP_TOP_Y + 35;
@@ -475,9 +475,9 @@
       const streamLen = pourProgress;
 
       if (streamLen > 0.01) {
-        // Thick main milk stream
+        // Thick main milk stream (50% larger)
         ctx.strokeStyle = MILK_COLOR;
-        ctx.lineWidth = 22;
+        ctx.lineWidth = 33;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -485,7 +485,7 @@
         for (let t = 0; t <= streamLen; t += 0.01) {
           const x = startX + (endX - startX) * t;
           const baseY = startY + (endY - startY) * t * t;
-          const wobble = Math.sin(t * 10 + frame * 0.08) * 3 * t;
+          const wobble = Math.sin(t * 10 + frame * 0.08) * 4 * t;
           const px = x + wobble * 0.3;
           const py = baseY;
 
@@ -496,12 +496,12 @@
 
         // White highlight core
         ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-        ctx.lineWidth = 10;
+        ctx.lineWidth = 15;
         ctx.beginPath();
         for (let t = 0; t <= streamLen; t += 0.01) {
           const x = startX + (endX - startX) * t;
           const baseY = startY + (endY - startY) * t * t;
-          const wobble = Math.sin(t * 10 + frame * 0.08) * 3 * t;
+          const wobble = Math.sin(t * 10 + frame * 0.08) * 4 * t;
           const px = x + wobble * 0.3;
           const py = baseY;
 
@@ -512,7 +512,7 @@
 
         // Edge shadow for depth
         ctx.strokeStyle = 'rgba(200, 190, 175, 0.4)';
-        ctx.lineWidth = 25;
+        ctx.lineWidth = 38;
         ctx.beginPath();
         for (let t = 0; t <= Math.min(streamLen, 0.3); t += 0.01) {
           const x = startX + (endX - startX) * t;
@@ -524,10 +524,10 @@
 
         // Splash at pour point
         if (pourProgress > 0.9) {
-          for (let i = 0; i < 8; i++) {
-            const splashX = endX + Math.sin(frame * 0.2 + i * 1.1) * 20;
-            const splashY = endY + Math.abs(Math.cos(frame * 0.15 + i * 1.5)) * 16;
-            const r = 3 + Math.random() * 3;
+          for (let i = 0; i < 10; i++) {
+            const splashX = endX + Math.sin(frame * 0.2 + i * 1.1) * 25;
+            const splashY = endY + Math.abs(Math.cos(frame * 0.15 + i * 1.5)) * 20;
+            const r = 4 + Math.random() * 4;
             ctx.beginPath();
             ctx.arc(splashX, splashY, r, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(245, 239, 232, 0.7)';
@@ -778,8 +778,12 @@
       drawEye();
       drawMouth();
 
-      // Ice cubes (on top of liquid)
+      // Ice cubes (on top of liquid, clipped to cup)
+      ctx.save();
+      drawCupOutlinePath();
+      ctx.clip();
       iceCubes.forEach(drawIceCube);
+      ctx.restore();
 
       // Cup outline again on top for clean edges
       drawCupOutlinePath();
