@@ -16,16 +16,23 @@
     }
     canvas {
       border-radius: 8px;
+      width: 500px;
+      height: 700px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
   </style>
 </head>
 <body>
-  <canvas id="taiyaki" width="500" height="700"></canvas>
+  <canvas id="taiyaki" width="125" height="175"></canvas>
   <script>
     const canvas = document.getElementById('taiyaki');
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const PIXEL_SCALE = 0.25;
+    ctx.scale(PIXEL_SCALE, PIXEL_SCALE);
+    // Use virtual dimensions matching original design
+    const W = canvas.width / PIXEL_SCALE;
+    const H = canvas.height / PIXEL_SCALE;
 
     // --- Animation state ---
     const STATE = {
