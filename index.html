@@ -27,11 +27,42 @@
     const W = canvas.width;
     const H = canvas.height;
 
-    // --- Load cup image ---
+    // --- Load and process cup image (invert: black->white, white->transparent) ---
     const cupImg = new Image();
     cupImg.src = 'cup.png';
-    let cupImgLoaded = false;
-    cupImg.onload = () => { cupImgLoaded = true; };
+    let processedCup = null;
+
+    cupImg.onload = () => {
+      // Draw to offscreen canvas and process pixels
+      const off = document.createElement('canvas');
+      off.width = cupImg.width;
+      off.height = cupImg.height;
+      const offCtx = off.getContext('2d');
+      offCtx.drawImage(cupImg, 0, 0);
+      const imgData = offCtx.getImageData(0, 0, off.width, off.height);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i+1], b = d[i+2];
+        // Brightness: 0=black, 255=white
+        const brightness = (r + g + b) / 3;
+        // Dark pixels become white, light pixels become transparent
+        // Threshold around 180
+        if (brightness < 180) {
+          const darkness = 1 - brightness / 180; // 1=fully dark, 0=threshold
+          d[i] = 255;     // R - white
+          d[i+1] = 255;   // G
+          d[i+2] = 255;   // B
+          d[i+3] = Math.round(darkness * 255); // Alpha
+        } else {
+          d[i] = 0;
+          d[i+1] = 0;
+          d[i+2] = 0;
+          d[i+3] = 0; // fully transparent
+        }
+      }
+      offCtx.putImageData(imgData, 0, 0);
+      processedCup = off;
+    };
 
     // --- Animation state ---
     const STATE = {
@@ -58,20 +89,18 @@
     const ICE_HIGHLIGHT = 'rgba(255, 255, 255, 0.8)';
     const ICE_SHADOW = 'rgba(180, 195, 210, 0.5)';
 
-    // Cup image positioning - where the cup from the image maps to on canvas
-    // The cup in the image (1536x2048) occupies roughly:
-    //   x: 390-820, y: 860-1790 (center ~605, ~1325)
-    // We want to place it centered on canvas with the cup body spanning our target area
+    // Cup image positioning
+    // The cup in the original image (1536x2048) occupies roughly:
+    //   center_x ~605, top ~870, bottom ~1780
     const IMG_CUP_CENTER_X = 605;
-    const IMG_CUP_TOP_Y = 860;
-    const IMG_CUP_BOTTOM_Y = 1790;
-    const IMG_CUP_WIDTH = 430;
+    const IMG_CUP_TOP_Y = 870;
+    const IMG_CUP_BOTTOM_Y = 1780;
     const IMG_CUP_HEIGHT = IMG_CUP_BOTTOM_Y - IMG_CUP_TOP_Y;
 
-    // Target position on canvas
+    // Target: bigger cup, filling most of canvas height
     const CUP_CENTER_X = W / 2;
-    const CUP_TOP_Y = 220;
-    const CUP_BOTTOM_Y = 590;
+    const CUP_TOP_Y = 130;
+    const CUP_BOTTOM_Y = 620;
     const TARGET_CUP_HEIGHT = CUP_BOTTOM_Y - CUP_TOP_Y;
     const IMG_SCALE = TARGET_CUP_HEIGHT / IMG_CUP_HEIGHT;
 
@@ -83,38 +112,47 @@
 
     const BASE_BOTTOM_Y = CUP_BOTTOM_Y + 10;
 
-    // Cup geometry matching the drawing's shape:
-    // Wide opening at top, fish face area, band, scales narrower, ridged base
-    const CUP_WIDTH_TOP = 105;   // opening width (half)
-    const CUP_WIDTH_FACE = 115;  // fish face area (widest, half)
-    const CUP_WIDTH_SCALES = 95; // scales section (half)
-    const CUP_WIDTH_BASE = 75;   // base (half)
+    // Cup interior geometry matching the drawing's shape
+    // These define the INTERIOR edges for clipping liquid/ice
+    // The cup is: wide rim at top, widens to fish face, band, narrows to scales, narrow ridged base
+    const CUP_WIDTH_TOP = 100;    // rim opening (half-width)
+    const CUP_WIDTH_FACE = 118;   // fish face widest (half-width)
+    const CUP_WIDTH_BAND = 105;   // at the band/divider
+    const CUP_WIDTH_SCALES = 88;  // scales section
+    const CUP_WIDTH_BASE = 62;    // ridged base bottom
 
     function cupEdgesAt(y) {
       const t = (y - CUP_TOP_Y) / (CUP_BOTTOM_Y - CUP_TOP_Y);
       let halfW;
       if (t < 0.05) {
-        // rim
-        halfW = CUP_WIDTH_TOP;
-      } else if (t < 0.2) {
-        // opening widens slightly to face
-        const lt = (t - 0.05) / 0.15;
+        // rim - slightly narrower opening
+        halfW = CUP_WIDTH_TOP - 5 + 5 * (t / 0.05);
+      } else if (t < 0.18) {
+        // widens from rim to fish face
+        const lt = (t - 0.05) / 0.13;
         halfW = CUP_WIDTH_TOP + (CUP_WIDTH_FACE - CUP_WIDTH_TOP) * lt;
-      } else if (t < 0.42) {
-        // fish face area (widest)
+      } else if (t < 0.38) {
+        // fish face area (widest part)
         halfW = CUP_WIDTH_FACE;
-      } else if (t < 0.55) {
-        // band/divider - transitions to scales
-        const lt = (t - 0.42) / 0.13;
-        halfW = CUP_WIDTH_FACE - (CUP_WIDTH_FACE - CUP_WIDTH_SCALES) * lt;
+      } else if (t < 0.48) {
+        // band/divider - narrows
+        const lt = (t - 0.38) / 0.10;
+        halfW = CUP_WIDTH_FACE - (CUP_WIDTH_FACE - CUP_WIDTH_BAND) * lt;
+      } else if (t < 0.52) {
+        // band center
+        halfW = CUP_WIDTH_BAND;
+      } else if (t < 0.60) {
+        // transition from band to scales
+        const lt = (t - 0.52) / 0.08;
+        halfW = CUP_WIDTH_BAND - (CUP_WIDTH_BAND - CUP_WIDTH_SCALES) * lt;
       } else if (t < 0.78) {
-        // scales section
-        const lt = (t - 0.55) / 0.23;
-        halfW = CUP_WIDTH_SCALES - (CUP_WIDTH_SCALES - CUP_WIDTH_BASE - 5) * lt;
+        // scales section - tapers
+        const lt = (t - 0.60) / 0.18;
+        halfW = CUP_WIDTH_SCALES - (CUP_WIDTH_SCALES - CUP_WIDTH_BASE - 10) * lt;
       } else {
-        // ridged base - narrows further
+        // ridged base
         const lt = (t - 0.78) / 0.22;
-        halfW = (CUP_WIDTH_BASE + 5) - 5 * lt;
+        halfW = (CUP_WIDTH_BASE + 10) - 10 * lt;
       }
       return { left: CUP_CENTER_X - halfW, right: CUP_CENTER_X + halfW };
     }
@@ -135,22 +173,27 @@
       ctx.closePath();
     }
 
-    // --- Ice cubes repositioned for the new cup shape ---
+    // --- Ice cubes repositioned for larger cup ---
     const iceCubes = [
-      { x: CUP_CENTER_X - 45, y: 560, w: 40, h: 34, rot: 0.2, bobOffset: 0 },
-      { x: CUP_CENTER_X + 15, y: 565, w: 38, h: 32, rot: 0.08, bobOffset: 2.5 },
-      { x: CUP_CENTER_X + 50, y: 558, w: 36, h: 32, rot: -0.15, bobOffset: 1.2 },
-      { x: CUP_CENTER_X - 60, y: 520, w: 42, h: 36, rot: -0.18, bobOffset: 0.8 },
-      { x: CUP_CENTER_X - 5, y: 525, w: 40, h: 35, rot: 0.1, bobOffset: 4.0 },
-      { x: CUP_CENTER_X + 55, y: 515, w: 42, h: 36, rot: -0.05, bobOffset: 3.0 },
-      { x: CUP_CENTER_X - 70, y: 478, w: 40, h: 34, rot: 0.12, bobOffset: 0.5 },
-      { x: CUP_CENTER_X - 10, y: 475, w: 42, h: 36, rot: -0.08, bobOffset: 2.8 },
-      { x: CUP_CENTER_X + 45, y: 482, w: 40, h: 34, rot: 0.07, bobOffset: 1.5 },
-      { x: CUP_CENTER_X + 75, y: 480, w: 36, h: 32, rot: -0.15, bobOffset: 2.0 },
-      { x: CUP_CENTER_X - 75, y: 435, w: 40, h: 34, rot: -0.1, bobOffset: 1.0 },
-      { x: CUP_CENTER_X - 15, y: 430, w: 42, h: 36, rot: 0.14, bobOffset: 3.3 },
-      { x: CUP_CENTER_X + 40, y: 438, w: 40, h: 34, rot: -0.06, bobOffset: 3.8 },
-      { x: CUP_CENTER_X + 80, y: 433, w: 36, h: 30, rot: 0.1, bobOffset: 2.2 },
+      // Bottom rows (in base/scales area)
+      { x: CUP_CENTER_X - 35, y: 590, w: 38, h: 32, rot: 0.2, bobOffset: 0 },
+      { x: CUP_CENTER_X + 20, y: 595, w: 36, h: 30, rot: 0.08, bobOffset: 2.5 },
+      // Scales area
+      { x: CUP_CENTER_X - 55, y: 545, w: 42, h: 36, rot: -0.18, bobOffset: 0.8 },
+      { x: CUP_CENTER_X + 10, y: 550, w: 40, h: 35, rot: 0.1, bobOffset: 4.0 },
+      { x: CUP_CENTER_X + 55, y: 540, w: 38, h: 34, rot: -0.05, bobOffset: 3.0 },
+      // Band area
+      { x: CUP_CENTER_X - 65, y: 490, w: 42, h: 36, rot: 0.12, bobOffset: 0.5 },
+      { x: CUP_CENTER_X, y: 495, w: 44, h: 38, rot: -0.08, bobOffset: 2.8 },
+      { x: CUP_CENTER_X + 60, y: 488, w: 40, h: 34, rot: 0.07, bobOffset: 1.5 },
+      // Fish face area (widest)
+      { x: CUP_CENTER_X - 80, y: 430, w: 44, h: 38, rot: -0.1, bobOffset: 1.0 },
+      { x: CUP_CENTER_X - 15, y: 425, w: 46, h: 40, rot: 0.14, bobOffset: 3.3 },
+      { x: CUP_CENTER_X + 50, y: 435, w: 44, h: 38, rot: -0.06, bobOffset: 3.8 },
+      // Upper area
+      { x: CUP_CENTER_X - 70, y: 370, w: 42, h: 36, rot: 0.1, bobOffset: 2.2 },
+      { x: CUP_CENTER_X + 5, y: 365, w: 44, h: 38, rot: -0.12, bobOffset: 1.8 },
+      { x: CUP_CENTER_X + 70, y: 375, w: 40, h: 34, rot: 0.08, bobOffset: 0.5 },
     ];
 
     let pouringStarted = false;
@@ -208,8 +251,8 @@
       drawCupClipPath();
       ctx.clip();
 
-      const espressoBaseLevel = CUP_BOTTOM_Y - 60;
-      const fullLevel = CUP_TOP_Y + 25;
+      const espressoBaseLevel = CUP_BOTTOM_Y - 80;
+      const fullLevel = CUP_TOP_Y + 30;
       const liquidTopY = espressoBaseLevel - (espressoBaseLevel - fullLevel) * fillLevel;
 
       const bands = 60;
@@ -252,12 +295,11 @@
       ctx.restore();
     }
 
-    // --- Draw the cup image ---
+    // --- Draw the processed cup image (white outlines, transparent background) ---
     function drawCupImage() {
-      if (!cupImgLoaded) return;
+      if (!processedCup) return;
       ctx.save();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.drawImage(cupImg, IMG_DRAW_X, IMG_DRAW_Y, IMG_DRAW_W, IMG_DRAW_H);
+      ctx.drawImage(processedCup, IMG_DRAW_X, IMG_DRAW_Y, IMG_DRAW_W, IMG_DRAW_H);
       ctx.restore();
     }
 
@@ -340,8 +382,8 @@
       const startX = W - 75;
       const startY = 45;
       const endX = CUP_CENTER_X + 15;
-      const espressoBaseLevel = CUP_BOTTOM_Y - 60;
-      const fullLevel = CUP_TOP_Y + 25;
+      const espressoBaseLevel = CUP_BOTTOM_Y - 80;
+      const fullLevel = CUP_TOP_Y + 30;
       const liquidTopY = espressoBaseLevel - (espressoBaseLevel - fullLevel) * fillLevel;
       const endY = Math.max(CUP_TOP_Y + 8, liquidTopY);
 
@@ -416,9 +458,9 @@
       ctx.save();
 
       const strawBottomX = CUP_CENTER_X - 10;
-      const strawBottomY = CUP_BOTTOM_Y - 30;
-      const strawTopX = CUP_CENTER_X - 80;
-      const strawTopY = CUP_TOP_Y - 100;
+      const strawBottomY = CUP_BOTTOM_Y - 50;
+      const strawTopX = CUP_CENTER_X - 90;
+      const strawTopY = CUP_TOP_Y - 80;
 
       const totalDX = strawTopX - strawBottomX;
       const totalDY = strawTopY - strawBottomY;
@@ -426,6 +468,10 @@
       const rimX = strawBottomX + totalDX * rimT;
       const rimY = CUP_TOP_Y;
 
+      // Inside cup portion (clipped)
+      ctx.save();
+      drawCupClipPath();
+      ctx.clip();
       ctx.strokeStyle = STRAW_COLOR_INSIDE;
       ctx.lineWidth = 15;
       ctx.lineCap = 'butt';
@@ -440,7 +486,9 @@
       ctx.moveTo(strawBottomX + 4, strawBottomY);
       ctx.lineTo(rimX + 4, rimY);
       ctx.stroke();
+      ctx.restore();
 
+      // Outside cup portion
       ctx.strokeStyle = 'rgba(0,0,0,0.1)';
       ctx.lineWidth = 18;
       ctx.lineCap = 'round';
@@ -476,8 +524,8 @@
     function drawShadow() {
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(CUP_CENTER_X, BASE_BOTTOM_Y + 8, CUP_WIDTH_BASE + 30, 10, 0, 0, Math.PI * 2);
-      const grad = ctx.createRadialGradient(CUP_CENTER_X, BASE_BOTTOM_Y + 8, 0, CUP_CENTER_X, BASE_BOTTOM_Y + 8, CUP_WIDTH_BASE + 30);
+      ctx.ellipse(CUP_CENTER_X, BASE_BOTTOM_Y + 8, CUP_WIDTH_BASE + 40, 12, 0, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(CUP_CENTER_X, BASE_BOTTOM_Y + 8, 0, CUP_CENTER_X, BASE_BOTTOM_Y + 8, CUP_WIDTH_BASE + 40);
       grad.addColorStop(0, 'rgba(0,0,0,0.2)');
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
@@ -564,21 +612,20 @@
       drawBackground();
       drawShadow();
 
-      // Liquid inside (drawn first, clipped to cup shape)
+      // Liquid inside (clipped to cup interior)
       drawLiquid();
 
-      // Ice cubes (clipped to cup)
+      // Ice cubes (clipped to cup interior)
       ctx.save();
       drawCupClipPath();
       ctx.clip();
       iceCubes.forEach(drawIceCube);
       ctx.restore();
 
-      // Cup image on top with multiply blend mode
-      // (black outlines show, white areas let liquid through)
+      // Cup image on top (white outlines, transparent background)
       drawCupImage();
 
-      // Straw
+      // Straw (inside portion behind cup, outside on top)
       drawStraw();
 
       // Milk stream (on top of everything)
